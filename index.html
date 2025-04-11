@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tool Dự Đoán Tài Xỉu</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      color: white;
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    h2 {
+      font-size: 28px;
+      margin-bottom: 30px;
+    }
+
+    input {
+      width: 90%;
+      max-width: 300px;
+      padding: 12px;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      box-shadow: 0 0 5px rgba(255,255,255,0.3);
+    }
+
+    button {
+      font-size: 18px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      margin: 10px 5px;
+      cursor: pointer;
+      background: #00c6ff;
+      background: linear-gradient(to right, #0072ff, #00c6ff);
+      color: white;
+      transition: 0.3s;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    button:hover {
+      opacity: 0.9;
+      transform: scale(1.05);
+    }
+
+    .result {
+      margin-top: 30px;
+      font-size: 20px;
+      font-weight: bold;
+      white-space: pre-line;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    pre {
+      background-color: rgba(255, 255, 255, 0.1);
+      padding: 10px;
+      border-radius: 8px;
+      text-align: left;
+      max-width: 400px;
+      margin: auto;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="authSection">
+    <h2>Nhập Key để sử dụng Tool</h2>
+    <input type="text" id="keyInput" placeholder="Nhập key truy cập">
+    <button onclick="checkKey()">Xác Nhận</button>
+    <div class="result" id="keyMessage"></div>
+  </div>
+
+  <div id="toolSection" class="hidden">
+    <h2>Tool Dự Đoán Tài Xỉu theo MD5</h2>
+    <input type="text" id="inputValue" placeholder="Nhập chuỗi mã cần đoán">
+    <br>
+    <button onclick="predict()">Dự Đoán</button>
+    <button onclick="resetForm()">Reset</button>
+    <div class="result" id="result"></div>
+  </div>
+
+  <div id="adminSection" class="hidden">
+    <h2>Chế độ Admin</h2>
+    <p><strong>Danh sách key hợp lệ:</strong></p>
+    <pre id="keyList"></pre>
+
+    <input type="text" id="newKey" placeholder="Nhập key mới">
+    <button onclick="addKey()">Thêm Key</button>
+    <br>
+    <input type="text" id="removeKey" placeholder="Nhập key cần xóa">
+    <button onclick="removeKey()">Xóa Key</button>
+    <br><br>
+    <input type="text" id="newAdminKey" placeholder="Đổi key Admin mới">
+    <button onclick="changeAdminKey()">Đổi Key Admin</button>
+    <br>
+    <button onclick="logout()">Thoát</button>
+    <div class="result" id="adminMessage"></div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <script>
+    let validKeys = ["abc123", "vip2025", "nct123"];
+    let adminKey = "adminvip"; // Key admin mặc định
+
+    function updateKeyList() {
+      document.getElementById("keyList").innerText = validKeys.join("\n");
+    }
+
+    function checkKey() {
+      const key = document.getElementById("keyInput").value.trim();
+      const msg = document.getElementById("keyMessage");
+
+      if (!key) {
+        msg.innerText = "Vui lòng nhập key.";
+        return;
+      }
+
+      if (key === adminKey) {
+        document.getElementById("authSection").classList.add("hidden");
+        document.getElementById("adminSection").classList.remove("hidden");
+        updateKeyList();
+      } else if (validKeys.includes(key)) {
+        document.getElementById("authSection").classList.add("hidden");
+        document.getElementById("toolSection").classList.remove("hidden");
+      } else {
+        msg.innerText = "Key không hợp lệ.";
+      }
+    }
+
+    function addKey() {
+      const newKey = document.getElementById("newKey").value.trim();
+      const msg = document.getElementById("adminMessage");
+
+      if (!newKey) {
+        msg.innerText = "Vui lòng nhập key mới.";
+        return;
+      }
+
+      if (!validKeys.includes(newKey)) {
+        validKeys.push(newKey);
+        updateKeyList();
+        msg.innerText = `Đã thêm key: ${newKey}`;
+        document.getElementById("newKey").value = "";
+      } else {
+        msg.innerText = "Key đã tồn tại.";
+      }
+    }
+
+    function removeKey() {
+      const keyToRemove = document.getElementById("removeKey").value.trim();
+      const msg = document.getElementById("adminMessage");
+
+      const index = validKeys.indexOf(keyToRemove);
+      if (index !== -1) {
+        validKeys.splice(index, 1);
+        updateKeyList();
+        msg.innerText = `Đã xóa key: ${keyToRemove}`;
+        document.getElementById("removeKey").value = "";
+      } else {
+        msg.innerText = "Không tìm thấy key để xóa.";
+      }
+    }
+
+    function changeAdminKey() {
+      const newAdmin = document.getElementById("newAdminKey").value.trim();
+      const msg = document.getElementById("adminMessage");
+
+      if (!newAdmin) {
+        msg.innerText = "Vui lòng nhập key admin mới.";
+        return;
+      }
+
+      adminKey = newAdmin;
+      document.getElementById("newAdminKey").value = "";
+      msg.innerText = `Đã đổi key admin thành: ${newAdmin}`;
+    }
+
+    function logout() {
+      document.getElementById("adminSection").classList.add("hidden");
+      document.getElementById("authSection").classList.remove("hidden");
+      document.getElementById("keyInput").value = "";
+      document.getElementById("keyMessage").innerText = "";
+      document.getElementById("adminMessage").innerText = "";
+    }
+
+    const patterns = [];
+    for (let i = 0; i < 100; i++) {
+      patterns.push(function(md5) {
+        const char = md5[i % 32];
+        const value = parseInt(char, 16);
+        return value % 2 === 0 ? "TÀI" : "XỈU";
+      });
+    }
+
+    function predict() {
+      const input = document.getElementById("inputValue").value.trim();
+      if (!input) {
+        document.getElementById("result").innerText = "Vui lòng nhập chuỗi.";
+        return;
+      }
+
+      const md5 = CryptoJS.MD5(input).toString();
+      let prediction = "";
+
+      for (let i = 0; i < patterns.length; i++) {
+        try {
+          const result = patterns[i](md5);
+          if (result === "TÀI" || result === "XỈU") {
+            prediction = result;
+            break;
+          }
+        } catch (e) { continue; }
+      }
+
+      if (!prediction) {
+        const lastChar = md5.slice(-1);
+        const hexValue = parseInt(lastChar, 16);
+        prediction = (hexValue > 7) ? "TÀI" : "XỈU";
+      }
+
+      document.getElementById("result").innerText = `MD5: ${md5}\n=> Dự đoán: ${prediction}`;
+    }
+
+    function resetForm() {
+      document.getElementById("inputValue").value = "";
+      document.getElementById("result").innerText = "";
+    }
+  </script>
+</body>
+</html>
