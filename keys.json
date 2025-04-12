@@ -1,3 +1,4 @@
 {
-  "keys": ["abc123", "vip2025", "nct123"]
+  "keys": ["abc123", "vip2025", "nct123"],
+  "admin": "adminvip"
 }
