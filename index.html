@@ -12,24 +12,61 @@
       text-align: center;
       padding: 40px 20px;
     }
-    h2 { font-size: 28px; margin-bottom: 30px; }
+
+    h2 {
+      font-size: 28px;
+      margin-bottom: 30px;
+    }
+
     input {
-      width: 90%; max-width: 300px; padding: 12px; font-size: 18px;
-      border: none; border-radius: 8px; margin-bottom: 15px;
+      width: 90%;
+      max-width: 300px;
+      padding: 12px;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      margin-bottom: 15px;
       box-shadow: 0 0 5px rgba(255,255,255,0.3);
     }
+
     button {
-      font-size: 18px; padding: 10px 20px; border: none; border-radius: 8px;
-      margin: 10px 5px; cursor: pointer;
-      background: linear-gradient(to right, #0072ff, #00c6ff); color: white;
-      transition: 0.3s; box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      font-size: 18px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      margin: 10px 5px;
+      cursor: pointer;
+      background: #00c6ff;
+      background: linear-gradient(to right, #0072ff, #00c6ff);
+      color: white;
+      transition: 0.3s;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
-    button:hover { opacity: 0.9; transform: scale(1.05); }
-    .result { margin-top: 30px; font-size: 20px; font-weight: bold; white-space: pre-line; }
-    .hidden { display: none; }
+
+    button:hover {
+      opacity: 0.9;
+      transform: scale(1.05);
+    }
+
+    .result {
+      margin-top: 30px;
+      font-size: 20px;
+      font-weight: bold;
+      white-space: pre-line;
+    }
+
+    .hidden {
+      display: none;
+    }
+
     pre {
-      background-color: rgba(255, 255, 255, 0.1); padding: 10px; border-radius: 8px;
-      text-align: left; max-width: 400px; margin: auto; white-space: pre-wrap;
+      background-color: rgba(255, 255, 255, 0.1);
+      padding: 10px;
+      border-radius: 8px;
+      text-align: left;
+      max-width: 400px;
+      margin: auto;
+      white-space: pre-wrap;
     }
   </style>
 </head>
@@ -55,6 +92,16 @@
     <h2>Chế độ Admin</h2>
     <p><strong>Danh sách key hợp lệ (online):</strong></p>
     <pre id="keyList">Đang tải...</pre>
+
+    <input type="text" id="newKey" placeholder="Nhập key mới">
+    <button onclick="addKey()">Thêm Key</button>
+    <br>
+    <input type="text" id="removeKey" placeholder="Nhập key cần xóa">
+    <button onclick="removeKey()">Xóa Key</button>
+    <br><br>
+    <input type="text" id="newAdminKey" placeholder="Đổi key Admin mới">
+    <button onclick="changeAdminKey()">Đổi Key Admin</button>
+    <br>
     <button onclick="logout()">Thoát</button>
     <div class="result" id="adminMessage"></div>
   </div>
@@ -62,22 +109,29 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
   <script>
     let validKeys = [];
-    let adminKey = "adminvip";
-    const apiURL = "https://thanhtoolweb.github.io/keys.json/"; // Thay URL thật ở đây
+    let adminKey = "";
+
+    const apiURL = "https://tanhtoolweb.github.io/keys.json";
 
     async function fetchKeysOnline() {
       try {
-        const res = await fetch(apiURL);
-        const data = await res.json();
+        const response = await fetch(apiURL);
+        const text = await response.text();
+        const data = JSON.parse(text);
         validKeys = data.keys || [];
-        document.getElementById("keyList").innerText = validKeys.join("\n");
+        adminKey = data.admin || "adminvip";
+        updateKeyList();
       } catch (error) {
-        document.getElementById("keyList").innerText = "Không thể tải key từ server.";
         console.error("Lỗi tải key:", error);
+        document.getElementById("keyList").innerText = "Không thể tải key từ server.";
       }
     }
 
-    async function checkKey() {
+    function updateKeyList() {
+      document.getElementById("keyList").innerText = validKeys.join("\n");
+    }
+
+    function checkKey() {
       const key = document.getElementById("keyInput").value.trim();
       const msg = document.getElementById("keyMessage");
 
@@ -89,21 +143,65 @@
       if (key === adminKey) {
         document.getElementById("authSection").classList.add("hidden");
         document.getElementById("adminSection").classList.remove("hidden");
-        await fetchKeysOnline();
+        fetchKeysOnline(); // Tải key từ GitHub
+      } else if (validKeys.includes(key)) {
+        document.getElementById("authSection").classList.add("hidden");
+        document.getElementById("toolSection").classList.remove("hidden");
       } else {
-        if (validKeys.length === 0) await fetchKeysOnline();
-        if (validKeys.includes(key)) {
-          document.getElementById("authSection").classList.add("hidden");
-          document.getElementById("toolSection").classList.remove("hidden");
-        } else {
-          msg.innerText = "Key không hợp lệ.";
-        }
+        msg.innerText = "Key không hợp lệ.";
       }
+    }
+
+    function addKey() {
+      const newKey = document.getElementById("newKey").value.trim();
+      const msg = document.getElementById("adminMessage");
+
+      if (!newKey) {
+        msg.innerText = "Vui lòng nhập key mới.";
+        return;
+      }
+
+      if (!validKeys.includes(newKey)) {
+        validKeys.push(newKey);
+        updateKeyList();
+        msg.innerText = `Đã thêm key: ${newKey}`;
+        document.getElementById("newKey").value = "";
+      } else {
+        msg.innerText = "Key đã tồn tại.";
+      }
+    }
+
+    function removeKey() {
+      const keyToRemove = document.getElementById("removeKey").value.trim();
+      const msg = document.getElementById("adminMessage");
+
+      const index = validKeys.indexOf(keyToRemove);
+      if (index !== -1) {
+        validKeys.splice(index, 1);
+        updateKeyList();
+        msg.innerText = `Đã xóa key: ${keyToRemove}`;
+        document.getElementById("removeKey").value = "";
+      } else {
+        msg.innerText = "Không tìm thấy key để xóa.";
+      }
+    }
+
+    function changeAdminKey() {
+      const newAdmin = document.getElementById("newAdminKey").value.trim();
+      const msg = document.getElementById("adminMessage");
+
+      if (!newAdmin) {
+        msg.innerText = "Vui lòng nhập key admin mới.";
+        return;
+      }
+
+      adminKey = newAdmin;
+      document.getElementById("newAdminKey").value = "";
+      msg.innerText = `Đã đổi key admin thành: ${newAdmin}`;
     }
 
     function logout() {
       document.getElementById("adminSection").classList.add("hidden");
-      document.getElementById("toolSection").classList.add("hidden");
       document.getElementById("authSection").classList.remove("hidden");
       document.getElementById("keyInput").value = "";
       document.getElementById("keyMessage").innerText = "";
